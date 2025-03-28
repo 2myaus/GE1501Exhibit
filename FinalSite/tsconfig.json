@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ES2015", // Ensure target is ES2015 or later
+    "lib": ["ES2015", "DOM"], // Add ES2015 and DOM libraries
+    "strict": true, // Optionally, enable strict mode for better type checking
+    // other compiler options...
+  },
+  "files": [
+    "scripts/core.ts",
+    "scripts/game.ts"
+  ]
+}
