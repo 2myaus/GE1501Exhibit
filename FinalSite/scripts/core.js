@@ -38,7 +38,7 @@ Vec2.one = new Vec2(1, 1);
 // ex.
 // new Vec2(0, 0) has 0 magnitude
 // new Vec2(1000, 0) is 1000m right
-// new Vec2(-50, -50) is 50m down and 50m left
+// new Vec2(-50, -50) is 50m up and 50m left
 class Sprite {
     constructor(argBitmap, argSize) {
         this.bitmap = argBitmap;
@@ -53,6 +53,7 @@ class GameObject {
         this.sprite = argSprite;
         this.worldPosition = argWorldPosition;
         this.velocity = argVelocity;
+        this.zIndex = 0;
     }
     update(deltaMillis, currentRoom) {
         // Runs every game update, for motion/logic
@@ -65,9 +66,10 @@ class GameObject {
 // GameObject: A visual, interactive object
 // ex.
 // new GameObject(new Sprite("island.png", new Vec2(10, 10)), new Vec2(5, 5), new Vec2(0,0)):
-//   A stationary, 10m x 10m island centered at 5m up, 5m right
+//   A stationary, 10m x 10m island centered at 5m down, 5m right
 class Room {
     constructor(argCanvas) {
+        this.timeScale = 1;
         this.canvas = argCanvas;
         const ctx = argCanvas.getContext("2d");
         if (ctx == null)
@@ -76,30 +78,88 @@ class Room {
         this.cameraWorldPos = new Vec2(0, 0);
         this.viewportWidth = 100;
         this.objects = [];
+        this._drawCallCache = [];
     }
     update(deltaMillis) {
         // Update necessary child objects
         this.objects.forEach((object) => {
-            object.update(deltaMillis, this);
+            object.update(deltaMillis * this.timeScale, this);
         });
     }
     draw(deltaMillis) {
         // Draw necessary child objects
         const ctx = this._ctx;
-        const pixelsPerMeter = this.canvas.width / this.viewportWidth;
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.objects.sort((a, b) => { return a.zIndex - b.zIndex; });
         this.objects.forEach((object) => {
-            object.animate(deltaMillis, this);
-            ctx.drawImage(object.sprite.bitmap, this.canvas.width * 0.5 +
-                (object.worldPosition.x -
-                    object.sprite.size.x * 0.5 -
-                    this.cameraWorldPos.x) *
-                    pixelsPerMeter, this.canvas.height * 0.5 +
-                (object.worldPosition.y -
-                    object.sprite.size.y * 0.5 -
-                    this.cameraWorldPos.y) *
-                    pixelsPerMeter, object.sprite.size.x * pixelsPerMeter, object.sprite.size.y * pixelsPerMeter);
+            object.animate(deltaMillis * this.timeScale, this);
+            if (!object.sprite)
+                return;
+            this._drawSprite(object.worldPosition, object.sprite);
         });
+        this._drawCallCache.forEach((callObj) => {
+            callObj.func.call(this, ...callObj.args);
+        });
+        this._drawCallCache = [];
+    }
+    _worldToScreenPos(worldPos) {
+        const pixelsPerMeter = this.canvas.width / this.viewportWidth;
+        return new Vec2(this.canvas.width * 0.5 +
+            (worldPos.x -
+                this.cameraWorldPos.x) *
+                pixelsPerMeter, this.canvas.height * 0.5 +
+            (worldPos.y -
+                this.cameraWorldPos.y) *
+                pixelsPerMeter);
+    }
+    drawSprite(worldCenter, sprite) {
+        this._drawCallCache.push({ func: this._drawSprite, args: [worldCenter, sprite] });
+    }
+    _drawSprite(worldCenter, sprite) {
+        const pixelsPerMeter = this.canvas.width / this.viewportWidth;
+        this._ctx.drawImage(sprite.bitmap, this.canvas.width * 0.5 +
+            (worldCenter.x -
+                sprite.size.x * 0.5 -
+                this.cameraWorldPos.x) *
+                pixelsPerMeter, this.canvas.height * 0.5 +
+            (worldCenter.y -
+                sprite.size.y * 0.5 -
+                this.cameraWorldPos.y) *
+                pixelsPerMeter, sprite.size.x * pixelsPerMeter, sprite.size.y * pixelsPerMeter);
+    }
+    fillRect(worldFrom, worldTo, color) {
+        this._drawCallCache.push({ func: this._fillRect, args: [worldFrom, worldTo, color] });
+    }
+    _fillRect(worldFrom, worldTo, color) {
+        const pixelsPerMeter = this.canvas.width / this.viewportWidth;
+        const pixelWidth = (worldTo.x - worldFrom.x) * pixelsPerMeter;
+        const pixelHeight = (worldTo.y - worldFrom.y) * pixelsPerMeter;
+        const topLeftPos = this._worldToScreenPos(worldFrom);
+        this._ctx.fillStyle = color;
+        this._ctx.fillRect(topLeftPos.x, topLeftPos.y, pixelWidth, pixelHeight);
+    }
+    outlineRect(worldFrom, worldTo, color, width) {
+        this._drawCallCache.push({ func: this._outlineRect, args: [worldFrom, worldTo, color, width] });
+    }
+    _outlineRect(worldFrom, worldTo, color, width) {
+        const pixelsPerMeter = this.canvas.width / this.viewportWidth;
+        const pixelWidth = (worldTo.x - worldFrom.x) * pixelsPerMeter;
+        const pixelHeight = (worldTo.y - worldFrom.y) * pixelsPerMeter;
+        const topLeftPos = this._worldToScreenPos(worldFrom);
+        this._ctx.strokeStyle = color;
+        this._ctx.lineWidth = width * pixelsPerMeter;
+        this._ctx.strokeRect(topLeftPos.x, topLeftPos.y, pixelWidth, pixelHeight);
+    }
+    drawText(worldCenter, fontSize, text, color) {
+        this._drawCallCache.push({ func: this._drawText, args: [worldCenter, fontSize, text, color] });
+    }
+    _drawText(worldCenter, fontSize, text, color) {
+        const pixelsPerMeter = this.canvas.width / this.viewportWidth;
+        const centerPos = this._worldToScreenPos(worldCenter);
+        this._ctx.textAlign = "center";
+        this._ctx.fillStyle = color;
+        this._ctx.font = `bold ${Math.round(fontSize * pixelsPerMeter)}px sans-serif`;
+        this._ctx.fillText(text, centerPos.x, centerPos.y);
     }
 }
 class Game {
