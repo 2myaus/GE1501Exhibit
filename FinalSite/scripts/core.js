@@ -186,7 +186,7 @@ class Game {
         });
     }
     start() {
-        let lastTimestamp = performance.now();
+        let lastTimestamp;
         const onFrame = (timestamp) => {
             let deltaMillis = timestamp - lastTimestamp;
             if (deltaMillis > 60) {
@@ -197,6 +197,7 @@ class Game {
             lastTimestamp = timestamp;
             requestAnimationFrame(onFrame);
         };
+        requestAnimationFrame((timestamp) => { lastTimestamp = timestamp; });
         requestAnimationFrame(onFrame);
     }
     constructor(canvas) {

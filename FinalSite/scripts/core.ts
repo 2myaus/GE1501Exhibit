@@ -255,7 +255,7 @@ class Game {
   }
 
   start() {
-    let lastTimestamp = performance.now();
+    let lastTimestamp: DOMHighResTimeStamp;
     const onFrame = (timestamp: DOMHighResTimeStamp) => {
       let deltaMillis = timestamp - lastTimestamp;
 
@@ -269,6 +269,7 @@ class Game {
       lastTimestamp = timestamp;
       requestAnimationFrame(onFrame);
     };
+    requestAnimationFrame((timestamp: DOMHighResTimeStamp) => { lastTimestamp = timestamp; });
     requestAnimationFrame(onFrame);
   }
 

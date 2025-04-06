@@ -11,6 +11,8 @@ type shipPart = {
 class ShipAttachment extends GameObject {
   attachmentConfig: shipPart;
 
+  _elapsedMillis: number;
+
   static maybeNew(argAttName: string): ShipAttachment | null {
     if (argAttName == "") return null;
     return new ShipAttachment(argAttName);
@@ -30,6 +32,26 @@ class ShipAttachment extends GameObject {
           cargoCapacity: 0,
         };
         spriteSize = new Vec2(5, 5);
+        break;
+      case "cargo":
+        maybeAttachmentConfig = {
+          partName: "cargo",
+          windSpeedBoost: 0,
+          baseWaterSpeed: 0,
+          waterDrag: 10,
+          cargoCapacity: 150
+        };
+        spriteSize = new Vec2(2, 2);
+        break;
+      case "flettner":
+        maybeAttachmentConfig = {
+          partName: "flettner",
+          windSpeedBoost: 70,
+          baseWaterSpeed: 0,
+          waterDrag: 0,
+          cargoCapacity: 50
+        };
+        spriteSize = new Vec2(3, 3);
         break;
       default:
         break;
@@ -51,19 +73,30 @@ class ShipAttachment extends GameObject {
     super(sprite, Vec2.zero, Vec2.zero);
 
     this.attachmentConfig = maybeAttachmentConfig;
+    this._elapsedMillis = 0;
   }
 
   animate(deltaMillis: number, currentRoom: Room) {
     super.animate(deltaMillis, currentRoom);
+
     let bitmap: ImageBitmap | undefined;
 
-    if (this.velocity.x >= 0) {
-      bitmap =
-        game?.loadedBitmaps[this.attachmentConfig.partName + "AttachmentRight"];
-    } else {
-      bitmap =
-        game?.loadedBitmaps[this.attachmentConfig.partName + "AttachmentLeft"];
+    if (this.attachmentConfig.partName == "flettner"){
+      const animStep = Math.floor(this._elapsedMillis / 250) % 8 + 1;
+      bitmap = game?.loadedBitmaps[`flettner${animStep}`];
     }
+
+    else{
+      if (this.velocity.x >= 0) {
+        bitmap =
+          game?.loadedBitmaps[this.attachmentConfig.partName + "AttachmentRight"];
+      } else {
+        bitmap =
+          game?.loadedBitmaps[this.attachmentConfig.partName + "AttachmentLeft"];
+      }
+    }
+
+    this._elapsedMillis += deltaMillis;
 
     if (!bitmap) {
       throw Error(
@@ -349,11 +382,21 @@ class Ship extends GameObject {
         );
     }
 
+    let att1off = Vec2.zero; // For cargo ship
+    let att2off = Vec2.zero; // For cargo ship
+    if (this.hull.partName == "pirate"){
+      att1off = new Vec2(0, 0);
+      att2off = new Vec2(-3, 0).times(this.velocity.x >= 0 ? 1 : -1)
+      .add(new Vec2(0, -1.8));
+    }
+
     if (this.attachment1) {
       if (currentRoom.objects.indexOf(this.attachment1) == -1) {
         currentRoom.objects.push(this.attachment1);
       }
-      this.attachment1.worldPosition = this.worldPosition;
+      let att1Size = Vec2.zero;
+      if(this.attachment1.sprite){ att1Size = this.attachment1.sprite.size; }
+      this.attachment1.worldPosition = this.worldPosition.add(att1off).add(new Vec2(0, -att1Size.y * 0.5));
       this.attachment1.velocity = this.velocity;
       this.attachment1.update(deltaMillis, currentRoom);
     }
@@ -361,7 +404,9 @@ class Ship extends GameObject {
       if (currentRoom.objects.indexOf(this.attachment2) == -1) {
         currentRoom.objects.push(this.attachment2);
       }
-      this.attachment2.worldPosition = this.worldPosition;
+      let att2Size = Vec2.zero;
+      if(this.attachment2.sprite){ att2Size = this.attachment2.sprite.size; }
+      this.attachment2.worldPosition = this.worldPosition.add(att2off).add(new Vec2(0, -att2Size.y * 0.5));
       this.attachment2.velocity = this.velocity;
       this.attachment2.update(deltaMillis, currentRoom);
     }
@@ -451,7 +496,27 @@ const startGame = (hull: string, a1: string, a2: string) => {
       "rectangleSailAttachmentLeft",
       "Assets/SailboatLeft.png",
     ),
-
+    game.preloadBitmap(
+      "cargoAttachmentLeft",
+      "Assets/CargoCrate.png"
+    ),
+    game.preloadBitmap(
+      "cargoAttachmentRight",
+      "Assets/CargoCrate.png"
+    ),
+    game.preloadBitmap(
+      "flettnerAttachmentRight",
+      "Assets/Flettner/1.png"
+    ),
+    game.preloadBitmap(
+      "flettnerAttachmentLeft",
+      "Assets/Flettner/1.png"
+    ),
+    (async () => {
+      for (let i = 1; i <= 8; i++) {
+        await game.preloadBitmap(`flettner${i}`, `Assets/Flettner/${i}.png`);
+      }
+    })(),
     game.preloadBitmap("frontsailright", "Assets/FrontSailNoOutlineRight.png"),
     game.preloadBitmap("backsailright", "Assets/BackSailNoOutlineRight.png"),
     game.preloadBitmap("frontsailleft", "Assets/FrontSailNoOutlineLeft.png"),
@@ -512,4 +577,4 @@ const startGame = (hull: string, a1: string, a2: string) => {
   });
 };
 
-window.onload = () => { startGame("pirate", "", ""); };
+window.onload = () => { startGame("pirate", "flettner", "flettner"); };

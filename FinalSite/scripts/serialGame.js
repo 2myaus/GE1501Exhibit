@@ -46,31 +46,38 @@ startButton.addEventListener("click", async () => {
         continue;
       }
 
-      const firstNum = parseInt(first.substr(7)); //rear sail
-      const secondNum = parseInt(second.substr(6)); //hull
-      const thirdNum = parseInt(third.substr(7)); //front sail
+      const hullNum = parseInt(first.split("White: ")[1]); // Hull
+      const frontNum = parseInt(second.split("Blue: ")[1]); // Front sail
+      const backNum = parseInt(third.split("Green")[1]); // Rear sail
 
       let hullName = "";
-      let a1Name = "";
-      let a2Name = "";
+      let frontName = "";
+      let backName = "";
 
-      if (firstNum < 500) {
-        a2Name = "rectangleSail";
-      }
-      if (secondNum < 500) {
-        hullName = "cargo";
-      }
-      if (thirdNum < 500) {
-        a1Name = "rectangleSail";
-      }
+      hullName = (() => {
+        if(hullNum < 1) return "cargo";
+        else if(hullNum < 2) return "pirate";
+        else return "";
+      });
+
+      const getAttachment = (num) => {
+        if(num < 1) return "rectangleSail";
+        else if(num < 2) return "flettner";
+        else if(num < 3) return "cargo";
+        else if(num < 4) return "cargo";
+        else return "";
+      };
+
+      frontName = getAttachment(frontNum);
+      backName = getAttachment(backName);
 
       if (hullName == "") {
         alert("No hull detected!");
       }
 
-      startGame(hullName, a1Name, a2Name);
+      startGame(hullName, frontName, backName);
 
-      console.log(hullName, a1Name, a2Name);
+      console.log(hullName, frontName, backName);
     }
   }
 });
