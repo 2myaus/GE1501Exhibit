@@ -232,6 +232,8 @@ class Game {
 
   loadedBitmaps: { [id: string]: ImageBitmap };
 
+  _lastFrameReq: number | null;
+
   async preloadBitmap(argName: string, argSrcUrl: string): Promise<void> {
     //Asynchronously create a Sprite from a url
     return new Promise((resolve, reject) => {
@@ -267,14 +269,22 @@ class Game {
       this.room.draw(deltaMillis);
 
       lastTimestamp = timestamp;
-      requestAnimationFrame(onFrame);
+      this._lastFrameReq = requestAnimationFrame(onFrame);
     };
-    requestAnimationFrame((timestamp: DOMHighResTimeStamp) => { lastTimestamp = timestamp; });
-    requestAnimationFrame(onFrame);
+    requestAnimationFrame((timestamp: DOMHighResTimeStamp) => {
+      lastTimestamp = timestamp;
+      this._lastFrameReq = requestAnimationFrame(onFrame);
+    });
+  }
+
+  stop() {
+    if(!this._lastFrameReq) return;
+    cancelAnimationFrame(this._lastFrameReq);
   }
 
   constructor(canvas: HTMLCanvasElement) {
     this.room = new Room(canvas);
     this.loadedBitmaps = {};
+    this._lastFrameReq = null;
   }
 }

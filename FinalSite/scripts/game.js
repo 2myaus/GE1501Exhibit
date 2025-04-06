@@ -301,6 +301,12 @@ class Ship extends GameObject {
             att2off = new Vec2(-3, 0).times(this.velocity.x >= 0 ? 1 : -1)
                 .add(new Vec2(0, -1.8));
         }
+        else if (this.hull.partName == "cargo") {
+            att1off = new Vec2(2, 0).times(this.velocity.x >= 0 ? 1 : -1)
+                .add(new Vec2(0, 0));
+            att2off = new Vec2(-1, 0).times(this.velocity.x >= 0 ? 1 : -1)
+                .add(new Vec2(0, 0));
+        }
         if (this.attachment1) {
             if (currentRoom.objects.indexOf(this.attachment1) == -1) {
                 currentRoom.objects.push(this.attachment1);
@@ -374,8 +380,8 @@ const startGame = (hull, a1, a2) => {
         canvas.height = canvas.offsetHeight;
     });
     Promise.all([
-        game.preloadBitmap("cargoHullRight", "Assets/NoSailNoOutlineRight.png"),
-        game.preloadBitmap("cargoHullLeft", "Assets/NoSailNoOutlineLeft.png"),
+        game.preloadBitmap("cargoHullRight", "Assets/Cargo/Right.png"),
+        game.preloadBitmap("cargoHullLeft", "Assets/Cargo/Left.png"),
         game.preloadBitmap("pirateHullRight", "Assets/PirateShip/Right.png"),
         game.preloadBitmap("pirateHullLeft", "Assets/PirateShip/Left.png"),
         game.preloadBitmap("islandTarget", "Assets/Island.png"),
@@ -437,4 +443,4 @@ const startGame = (hull, a1, a2) => {
         game.start();
     });
 };
-window.onload = () => { startGame("pirate", "flettner", "flettner"); };
+// window.onload = () => { startGame("pirate", "flettner", "flettner"); };

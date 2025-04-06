@@ -16,9 +16,17 @@ let iBuf = "";
 
 let pinVals = {};
 
-startButton.addEventListener("click", async () => {
-  port = await navigator.serial.requestPort();
+const startSerial = async () => {
+  const ports = await navigator.serial.getPorts();
+  if (ports.length > 0) {
+    port = ports[0];
+  }
+  else {
+    port = await navigator.serial.requestPort();
+  }
   await port.open({ baudRate: 9600 });
+
+  startButton.remove();
 
   const textDecoder = new TextDecoderStream();
   const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
@@ -48,40 +56,49 @@ startButton.addEventListener("click", async () => {
 
       const hullNum = parseInt(first.split("White: ")[1]); // Hull
       const frontNum = parseInt(second.split("Blue: ")[1]); // Front sail
-      const backNum = parseInt(third.split("Green")[1]); // Rear sail
+      const backNum = parseInt(third.split("Green: ")[1]); // Rear sail
 
       let hullName = "";
       let frontName = "";
       let backName = "";
 
       hullName = (() => {
-        if(hullNum < 1) return "cargo";
-        else if(hullNum < 2) return "pirate";
+        if (hullNum < 395) return "cargo";
+        else if (hullNum < 500) return "pirate";
         else return "";
-      });
+      })();
 
       const getAttachment = (num) => {
-        if(num < 1) return "rectangleSail";
-        else if(num < 2) return "flettner";
-        else if(num < 3) return "cargo";
-        else if(num < 4) return "cargo";
+        if (num < 30) return "rectangleSail";
+        else if (num < 60) return "cargo";
+        else if (num < 130) return "cargo";
+        else if (num < 580) return "flettner";
         else return "";
       };
 
       frontName = getAttachment(frontNum);
-      backName = getAttachment(backName);
+      backName = getAttachment(backNum);
 
       if (hullName == "") {
         alert("No hull detected!");
       }
 
+      if(game){ game.stop(); }
       startGame(hullName, frontName, backName);
 
       console.log(hullName, frontName, backName);
     }
   }
-});
+};
+
+startButton.addEventListener("click", startSerial);
 
 window.addEventListener("load", () => {
   document.body.appendChild(startButton);
 });
+
+navigator.serial.getPorts().then(async (ports) => {
+  if(ports.length == 0) return;
+  await startSerial();  
+});
+

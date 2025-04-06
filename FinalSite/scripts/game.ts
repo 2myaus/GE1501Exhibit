@@ -81,12 +81,12 @@ class ShipAttachment extends GameObject {
 
     let bitmap: ImageBitmap | undefined;
 
-    if (this.attachmentConfig.partName == "flettner"){
+    if (this.attachmentConfig.partName == "flettner") {
       const animStep = Math.floor(this._elapsedMillis / 250) % 8 + 1;
       bitmap = game?.loadedBitmaps[`flettner${animStep}`];
     }
 
-    else{
+    else {
       if (this.velocity.x >= 0) {
         bitmap =
           game?.loadedBitmaps[this.attachmentConfig.partName + "AttachmentRight"];
@@ -384,10 +384,16 @@ class Ship extends GameObject {
 
     let att1off = Vec2.zero; // For cargo ship
     let att2off = Vec2.zero; // For cargo ship
-    if (this.hull.partName == "pirate"){
+    if (this.hull.partName == "pirate") {
       att1off = new Vec2(0, 0);
       att2off = new Vec2(-3, 0).times(this.velocity.x >= 0 ? 1 : -1)
-      .add(new Vec2(0, -1.8));
+        .add(new Vec2(0, -1.8));
+    }
+    else if (this.hull.partName == "cargo") {
+      att1off = new Vec2(2, 0).times(this.velocity.x >= 0 ? 1 : -1)
+        .add(new Vec2(0, 0));
+      att2off = new Vec2(-1, 0).times(this.velocity.x >= 0 ? 1 : -1)
+        .add(new Vec2(0, 0));
     }
 
     if (this.attachment1) {
@@ -395,7 +401,7 @@ class Ship extends GameObject {
         currentRoom.objects.push(this.attachment1);
       }
       let att1Size = Vec2.zero;
-      if(this.attachment1.sprite){ att1Size = this.attachment1.sprite.size; }
+      if (this.attachment1.sprite) { att1Size = this.attachment1.sprite.size; }
       this.attachment1.worldPosition = this.worldPosition.add(att1off).add(new Vec2(0, -att1Size.y * 0.5));
       this.attachment1.velocity = this.velocity;
       this.attachment1.update(deltaMillis, currentRoom);
@@ -405,7 +411,7 @@ class Ship extends GameObject {
         currentRoom.objects.push(this.attachment2);
       }
       let att2Size = Vec2.zero;
-      if(this.attachment2.sprite){ att2Size = this.attachment2.sprite.size; }
+      if (this.attachment2.sprite) { att2Size = this.attachment2.sprite.size; }
       this.attachment2.worldPosition = this.worldPosition.add(att2off).add(new Vec2(0, -att2Size.y * 0.5));
       this.attachment2.velocity = this.velocity;
       this.attachment2.update(deltaMillis, currentRoom);
@@ -474,8 +480,8 @@ const startGame = (hull: string, a1: string, a2: string) => {
   });
 
   Promise.all([
-    game.preloadBitmap("cargoHullRight", "Assets/NoSailNoOutlineRight.png"),
-    game.preloadBitmap("cargoHullLeft", "Assets/NoSailNoOutlineLeft.png"),
+    game.preloadBitmap("cargoHullRight", "Assets/Cargo/Right.png"),
+    game.preloadBitmap("cargoHullLeft", "Assets/Cargo/Left.png"),
     game.preloadBitmap("pirateHullRight", "Assets/PirateShip/Right.png"),
     game.preloadBitmap("pirateHullLeft", "Assets/PirateShip/Left.png"),
 
@@ -577,4 +583,4 @@ const startGame = (hull: string, a1: string, a2: string) => {
   });
 };
 
-window.onload = () => { startGame("pirate", "flettner", "flettner"); };
+// window.onload = () => { startGame("pirate", "flettner", "flettner"); };

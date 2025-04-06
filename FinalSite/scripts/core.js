@@ -195,13 +195,21 @@ class Game {
             this.room.update(deltaMillis);
             this.room.draw(deltaMillis);
             lastTimestamp = timestamp;
-            requestAnimationFrame(onFrame);
+            this._lastFrameReq = requestAnimationFrame(onFrame);
         };
-        requestAnimationFrame((timestamp) => { lastTimestamp = timestamp; });
-        requestAnimationFrame(onFrame);
+        requestAnimationFrame((timestamp) => {
+            lastTimestamp = timestamp;
+            this._lastFrameReq = requestAnimationFrame(onFrame);
+        });
+    }
+    stop() {
+        if (!this._lastFrameReq)
+            return;
+        cancelAnimationFrame(this._lastFrameReq);
     }
     constructor(canvas) {
         this.room = new Room(canvas);
         this.loadedBitmaps = {};
+        this._lastFrameReq = null;
     }
 }
