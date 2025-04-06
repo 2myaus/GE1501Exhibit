@@ -24,8 +24,8 @@ void loop() {
   const unsigned short blueIn = analogRead(PIN_BLUE);
   const unsigned short greenIn = analogRead(PIN_GREEN);
 
-  Serial.println("White: " + String(whiteIn)); //Rear sail spot
-  Serial.println("Blue: " + String(blueIn)); //Hull spot
-  Serial.println("Green: " + String(greenIn)); //Front sail spot
+  Serial.println("White: " + String(whiteIn)); //Hull spot
+  Serial.println("Blue: " + String(blueIn)); //Front sail spot
+  Serial.println("Green: " + String(greenIn)); //Back sail spot
   Serial.print("end");
 }
