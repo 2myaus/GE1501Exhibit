@@ -90,6 +90,9 @@ const startSerial = async () => {
         }
         else buttonPressed = true;
       }
+      else {
+        startGame(hullName, frontName, backName);
+      }
 
       console.log(hullName, frontName, backName);
     }

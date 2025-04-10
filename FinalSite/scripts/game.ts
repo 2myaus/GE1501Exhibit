@@ -228,6 +228,7 @@ class Ship extends GameObject {
   state: ShipState;
 
   carryingCargo: number;
+  lastBonus: number; // Last bonus cargo amount. Use during return phase to display bonus
 
   constructor(
     argHullName: string,
@@ -288,12 +289,7 @@ class Ship extends GameObject {
     this.state = ShipState.idle;
 
     this.zIndex = 50;
-  }
-
-  update(deltaMillis: number, currentRoom: Room) {
-    const windSpeed = 10; // m/s
-    const cargoLoadSpeed = 60; // Units per second
-    const deltaSeconds = deltaMillis * 0.001;
+    this.lastBonus = 0;
 
     let statSum: shipPart = {
       partName: "sum",
@@ -321,6 +317,17 @@ class Ship extends GameObject {
         this.attachment2.attachmentConfig.windSpeedBoost;
     }
 
+    this.statSum = statSum;
+  }
+
+  statSum: shipPart;
+
+  update(deltaMillis: number, currentRoom: Room) {
+    const windSpeed = 10; // m/s
+    const cargoLoadSpeed = 60; // Units per second
+    const deltaSeconds = deltaMillis * 0.001;
+
+
     if (!this.target || !this.home) this.state = ShipState.idle;
     let toPosition: Vec2 = Vec2.zero; // Where we want to go
 
@@ -331,6 +338,7 @@ class Ship extends GameObject {
         break;
       }
       case ShipState.goingToTarget: {
+        this.lastBonus = 0;
         toPosition = new Vec2(this.target!.worldPosition.x, 0);
         const targetDist = Vec2.distance(toPosition, this.worldPosition);
         if (targetDist < this.targetStopDistance) {
@@ -345,10 +353,22 @@ class Ship extends GameObject {
           this.state = ShipState.unloadingCargo;
         }
         if (buttonPressed) {
-          alert("presed");
+          const offDist = Math.abs(Vec2.distance(this.worldPosition, toPosition) - this.homeStopDistance * 1.5);
+          const cargoBonus = Math.min(Math.max(5 - offDist, 0), 5) * 30;
+
+
+          const oldTargetCargo = this.target!.heldCargo;
+          this.target!.heldCargo -= cargoBonus;
+          if (this.target!.heldCargo < 0) { this.target!.heldCargo = 0; }
+          const realCargoBonus = oldTargetCargo - this.target!.heldCargo;
+          this.carryingCargo += realCargoBonus;
+          this.lastBonus = realCargoBonus;
         }
 
-        currentRoom.outlineCircle(this.home!.worldPosition, this.homeStopDistance, "#0af", 0.5);
+        if (this.lastBonus == 0 && !game.over) {
+          currentRoom.outlineCircle(this.home!.worldPosition, this.homeStopDistance * 1.5, "#0fa", 2);
+          currentRoom.outlineCircle(this.home!.worldPosition, Vec2.distance(this.worldPosition, toPosition), "#0af", 0.3)
+        }
 
         break;
       }
@@ -363,13 +383,13 @@ class Ship extends GameObject {
           this.target!.heldCargo = 0;
           this.state = ShipState.goingHome;
         }
-        if (this.carryingCargo < statSum.cargoCapacity) {
+        if (this.carryingCargo < this.statSum.cargoCapacity) {
           this.target!.heldCargo -= cargoLoadSpeed * deltaSeconds;
           this.carryingCargo += cargoLoadSpeed * deltaSeconds;
         }
-        if (this.carryingCargo >= statSum.cargoCapacity) {
-          this.target!.heldCargo += this.carryingCargo - statSum.cargoCapacity;
-          this.carryingCargo = statSum.cargoCapacity;
+        if (this.carryingCargo >= this.statSum.cargoCapacity) {
+          this.target!.heldCargo += this.carryingCargo - this.statSum.cargoCapacity;
+          this.carryingCargo = this.statSum.cargoCapacity;
           this.state = ShipState.goingHome;
         }
         break;
@@ -399,10 +419,10 @@ class Ship extends GameObject {
         .minus(this.worldPosition)
         .unit()
         .times(
-          statSum.baseWaterSpeed -
-          this.velocity.magnitude() * statSum.waterDrag +
+          this.statSum.baseWaterSpeed -
+          this.velocity.magnitude() * this.statSum.waterDrag +
           (windSpeed - this.velocity.magnitude()) *
-          statSum.windSpeedBoost *
+          this.statSum.windSpeedBoost *
           deltaSeconds,
         );
     }
@@ -470,6 +490,9 @@ class Ship extends GameObject {
     if (!this.sprite) return;
 
     this.sprite = new Sprite(bitmap, this.sprite.size);
+    if (this.lastBonus > 0) {
+      currentRoom.drawText(this.worldPosition.add(new Vec2(0, -4)), 3, `+${this.lastBonus.toFixed(0)}`, "#0f8");
+    }
   }
 }
 
@@ -613,11 +636,15 @@ const startGame = (hull: string, a1: string, a2: string) => {
           game.room.viewportWidth = startViewportWidth;
           game.room.cameraWorldPos = startCameraPos;
           game.room.timeScale = 0.001;
+
+          currentRoom.drawText(mainShip!.worldPosition.add(new Vec2(0, -10)), 2, `Speed: ${mainShip?.statSum.baseWaterSpeed}`, "#a0a8a6");
+          currentRoom.drawText(mainShip!.worldPosition.add(new Vec2(0, -8)), 2, `Wind power: ${mainShip?.statSum.windSpeedBoost}`, "#a0a8a6");
+          currentRoom.drawText(mainShip!.worldPosition.add(new Vec2(0, -6)), 2, `Cargo capacity: ${mainShip?.statSum.cargoCapacity}`, "#a0a8a6");
         }
         else if (eMillis > endTime) {
           game.room.viewportWidth = endViewportWidth;
           game.room.cameraWorldPos = endCameraPos;
-          game.room.timeScale = 5;
+          game.room.timeScale = 1;
         }
         else {
           const animationDuration = endTime - startTime;
