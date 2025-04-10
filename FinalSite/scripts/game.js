@@ -93,25 +93,29 @@ class ShipAttachment extends GameObject {
 class CargoTarget extends GameObject {
     constructor(targetType, worldPos) {
         let spriteSize = Vec2.zero;
+        let bitmapName = "";
         switch (targetType) {
             case "home":
                 spriteSize = new Vec2(20, 20);
+                bitmapName = "islandEmpty";
                 break;
             case "island":
                 spriteSize = new Vec2(25, 25);
+                bitmapName = "islandEmpty";
                 break;
             default:
                 break;
         }
-        const bitmap = game === null || game === void 0 ? void 0 : game.loadedBitmaps[targetType + "Target"];
+        const bitmap = game === null || game === void 0 ? void 0 : game.loadedBitmaps[bitmapName];
         if (!bitmap) {
-            throw Error(`Invalid cargotarget bitmap: ${targetType}Target !`);
+            throw Error(`Invalid cargotarget bitmap: ${bitmapName}!`);
         }
         const sprite = new Sprite(bitmap, spriteSize);
         super(sprite, worldPos, Vec2.zero);
         this.heldCargo = 0;
         this.maxCargo = 1000;
         this.zIndex = -50;
+        this.targetType = targetType;
     }
     update(deltaMillis, currentRoom) {
         super.update(deltaMillis, currentRoom);
@@ -126,6 +130,17 @@ class CargoTarget extends GameObject {
         super.animate(deltaMillis, currentRoom);
         if (!this.sprite)
             return;
+        let buildingSprite = null;
+        let buildingStage = Math.min(Math.max(Math.floor(3 * this.heldCargo / this.maxCargo) + 1, 1), 3);
+        if (this.targetType == "home") {
+            buildingSprite = new Sprite(game.loadedBitmaps[`homeIslandBuilding${buildingStage}`], new Vec2(15, 15));
+        }
+        else {
+            buildingSprite = null;
+        }
+        if (buildingSprite) {
+            currentRoom.drawSprite(this.worldPosition.add(new Vec2(-1, 1)), buildingSprite);
+        }
         const progressBarWidth = 10;
         const progressBarHeight = 1;
         const progressBarOffset = new Vec2(0, this.sprite.size.y * 0.5 + 1);
@@ -303,9 +318,9 @@ class Ship extends GameObject {
         }
         else if (this.hull.partName == "cargo") {
             att1off = new Vec2(2, 0).times(this.velocity.x >= 0 ? 1 : -1)
-                .add(new Vec2(0, 0));
+                .add(new Vec2(0, -0.5));
             att2off = new Vec2(-1, 0).times(this.velocity.x >= 0 ? 1 : -1)
-                .add(new Vec2(0, 0));
+                .add(new Vec2(0, -0.5));
         }
         if (this.attachment1) {
             if (currentRoom.objects.indexOf(this.attachment1) == -1) {
@@ -386,8 +401,14 @@ const startGame = (hull, a1, a2) => {
         game.preloadBitmap("pirateHullLeft", "Assets/PirateShip/Left.png"),
         game.preloadBitmap("islandTarget", "Assets/Island.png"),
         game.preloadBitmap("homeTarget", "Assets/IslandBase.png"),
-        game.preloadBitmap("rectangleSailAttachmentRight", "Assets/SailboatRight.png"),
-        game.preloadBitmap("rectangleSailAttachmentLeft", "Assets/SailboatLeft.png"),
+        game.preloadBitmap("islandEmpty", "Assets/IslandEmpty.png"),
+        (() => __awaiter(void 0, void 0, void 0, function* () {
+            for (let i = 1; i <= 3; i++) {
+                yield game.preloadBitmap(`homeIslandBuilding${i}`, `Assets/HomeBuildings/${i}.png`);
+            }
+        }))(),
+        game.preloadBitmap("rectangleSailAttachmentRight", "Assets/RectangleSail/Right.png"),
+        game.preloadBitmap("rectangleSailAttachmentLeft", "Assets/RectangleSail/Left.png"),
         game.preloadBitmap("cargoAttachmentLeft", "Assets/CargoCrate.png"),
         game.preloadBitmap("cargoAttachmentRight", "Assets/CargoCrate.png"),
         game.preloadBitmap("flettnerAttachmentRight", "Assets/Flettner/1.png"),
@@ -405,10 +426,11 @@ const startGame = (hull, a1, a2) => {
     ]).then(() => {
         if (hull == "")
             return;
-        const ship = new Ship(hull, a1, a2, new Vec2(-20, 0));
+        const ship = new Ship(hull, a1, a2, new Vec2(-30, 0));
         const home = new CargoTarget("home", new Vec2(-50, -2));
         const target = new CargoTarget("island", new Vec2(50, -4));
         target.heldCargo = 1000;
+        ship.state = ShipState.goingToTarget;
         ship.home = home;
         ship.target = target;
         canvas.width = canvas.offsetWidth;
@@ -417,25 +439,39 @@ const startGame = (hull, a1, a2) => {
         game.room.viewportWidth = 60;
         const textObj = new GameObject(undefined, home.worldPosition, Vec2.zero);
         let eMillis = 0;
+        const startTime = 2000;
+        const startViewportWidth = game.room.viewportWidth;
+        const startCameraPos = game.room.cameraWorldPos;
+        const endTime = 3000;
+        const endViewportWidth = 150;
+        const endCameraPos = Vec2.zero;
+        let gameOver = false;
         textObj.animate = (deltaMillis, currentRoom) => {
-            currentRoom.drawText(textObj.worldPosition.add(new Vec2(0, -14)), 3, "Retrieve the gold,", "#ffd866");
-            currentRoom.drawText(textObj.worldPosition.add(new Vec2(0, -10)), 3, "Build your island!", "#ffd866");
-            eMillis += deltaMillis;
-            const widthT = 150;
-            const posT = Vec2.zero;
-            if (eMillis > 2000 && game.room.viewportWidth < widthT) {
-                game.room.viewportWidth += deltaMillis * 0.2;
-                game.room.viewportWidth = widthT;
+            if (!gameOver) {
+                currentRoom.drawText(textObj.worldPosition.add(new Vec2(0, -14)), 3, "Retrieve the gold,", "#ffd866");
+                currentRoom.drawText(textObj.worldPosition.add(new Vec2(0, -10)), 3, "Build your island!", "#ffd866");
+                eMillis += deltaMillis;
+                if (eMillis <= startTime) {
+                    game.room.viewportWidth = startViewportWidth;
+                    game.room.cameraWorldPos = startCameraPos;
+                    game.room.timeScale = 0.001;
+                }
+                else if (eMillis > endTime) {
+                    game.room.viewportWidth = endViewportWidth;
+                    game.room.cameraWorldPos = endCameraPos;
+                    game.room.timeScale = 5;
+                }
+                else {
+                    const animationDuration = endTime - startTime;
+                    const animationCurrentTime = eMillis - startTime;
+                    game.room.viewportWidth = startViewportWidth + (endViewportWidth - startViewportWidth) * (animationCurrentTime / animationDuration);
+                    game.room.cameraWorldPos = startCameraPos.add(endCameraPos.minus(startCameraPos).times(animationCurrentTime / animationDuration));
+                }
+                gameOver = home.heldCargo >= home.maxCargo;
             }
-            else if (widthT - game.room.viewportWidth < 1) {
-                game.room.viewportWidth = widthT;
-            }
-            if (eMillis > 2000 && game.room.cameraWorldPos != posT) {
-                game.room.cameraWorldPos = game.room.cameraWorldPos.add(posT.minus(game.room.cameraWorldPos).unit().times(deltaMillis * 0.05));
-                game.room.cameraWorldPos = posT;
-            }
-            else if (game.room.cameraWorldPos.minus(posT).x > 0) {
-                game.room.cameraWorldPos = posT;
+            else {
+                currentRoom.drawText(new Vec2(0, -14), 5, "You win!", "#ffd866");
+                currentRoom.drawText(new Vec2(0, -9), 5, `Time: ${Math.floor(eMillis * 0.01) * 0.1}s!`, "#ffd866");
             }
         };
         game.room.objects = [ship, home, target, new GameBg(), textObj];

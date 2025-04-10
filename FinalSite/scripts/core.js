@@ -92,7 +92,7 @@ class Room {
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.objects.sort((a, b) => { return a.zIndex - b.zIndex; });
         this.objects.forEach((object) => {
-            object.animate(deltaMillis * this.timeScale, this);
+            object.animate(deltaMillis, this);
             if (!object.sprite)
                 return;
             this._drawSprite(object.worldPosition, object.sprite);

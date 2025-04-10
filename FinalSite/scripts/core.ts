@@ -131,7 +131,7 @@ class Room {
     this.objects.sort((a: GameObject, b: GameObject) => { return a.zIndex - b.zIndex; });
 
     this.objects.forEach((object) => {
-      object.animate(deltaMillis * this.timeScale, this);
+      object.animate(deltaMillis, this);
       if (!object.sprite) return;
 
       this._drawSprite(object.worldPosition, object.sprite);

@@ -64,12 +64,12 @@ const startSerial = async () => {
 
       hullName = (() => {
         if (hullNum < 395) return "cargo";
-        else if (hullNum < 500) return "pirate";
+        else if (hullNum < 580) return "pirate";
         else return "";
       })();
 
       const getAttachment = (num) => {
-        if (num < 30) return "rectangleSail";
+        if (num < 45) return "rectangleSail";
         else if (num < 60) return "cargo";
         else if (num < 130) return "cargo";
         else if (num < 580) return "flettner";
@@ -95,10 +95,16 @@ startButton.addEventListener("click", startSerial);
 
 window.addEventListener("load", () => {
   document.body.appendChild(startButton);
+  if(navigator.serial){
+    navigator.serial.getPorts().then(async (ports) => {
+      if(ports.length == 0) return;
+      await startSerial();  
+    });
+  }
+  else{
+    // startGame("pirate", "rectangleSail", "flettner");
+    startGame(prompt("hull?"), prompt("att1?"), prompt("att2?"));
+  }
 });
 
-navigator.serial.getPorts().then(async (ports) => {
-  if(ports.length == 0) return;
-  await startSerial();  
-});
 
