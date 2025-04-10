@@ -439,6 +439,7 @@ const startGame = (hull, a1, a2) => {
         game.room.viewportWidth = 60;
         const textObj = new GameObject(undefined, home.worldPosition, Vec2.zero);
         let eMillis = 0;
+        let eUpdateMillis = 0;
         const startTime = 2000;
         const startViewportWidth = game.room.viewportWidth;
         const startCameraPos = game.room.cameraWorldPos;
@@ -446,6 +447,11 @@ const startGame = (hull, a1, a2) => {
         const endViewportWidth = 150;
         const endCameraPos = Vec2.zero;
         let gameOver = false;
+        textObj.update = (deltaMillis, _) => {
+            if (gameOver)
+                return;
+            eUpdateMillis += deltaMillis;
+        };
         textObj.animate = (deltaMillis, currentRoom) => {
             if (!gameOver) {
                 currentRoom.drawText(textObj.worldPosition.add(new Vec2(0, -14)), 3, "Retrieve the gold,", "#ffd866");
@@ -471,7 +477,7 @@ const startGame = (hull, a1, a2) => {
             }
             else {
                 currentRoom.drawText(new Vec2(0, -14), 5, "You win!", "#ffd866");
-                currentRoom.drawText(new Vec2(0, -9), 5, `Time: ${Math.floor(eMillis * 0.01) * 0.1}s!`, "#ffd866");
+                currentRoom.drawText(new Vec2(0, -9), 5, `Time: ${(eUpdateMillis * 0.001).toFixed(1)}s!`, "#ffd866");
             }
         };
         game.room.objects = [ship, home, target, new GameBg(), textObj];

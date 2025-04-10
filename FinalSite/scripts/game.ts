@@ -575,6 +575,7 @@ const startGame = (hull: string, a1: string, a2: string) => {
     const textObj = new GameObject(undefined, home.worldPosition, Vec2.zero);
 
     let eMillis = 0;
+    let eUpdateMillis = 0;
 
     const startTime = 2000;
     const startViewportWidth = game.room.viewportWidth;
@@ -585,6 +586,11 @@ const startGame = (hull: string, a1: string, a2: string) => {
     const endCameraPos = Vec2.zero;
 
     let gameOver = false;
+
+    textObj.update = (deltaMillis: number, _) => {
+      if(gameOver) return;
+      eUpdateMillis += deltaMillis;
+    }
 
     textObj.animate = (deltaMillis: number, currentRoom: Room) => {
       if (!gameOver) {
@@ -614,7 +620,7 @@ const startGame = (hull: string, a1: string, a2: string) => {
       }
       else {
         currentRoom.drawText(new Vec2(0, -14), 5, "You win!", "#ffd866");
-        currentRoom.drawText(new Vec2(0, -9), 5, `Time: ${Math.floor(eMillis * 0.01) * 0.1}s!`, "#ffd866");
+        currentRoom.drawText(new Vec2(0, -9), 5, `Time: ${(eUpdateMillis * 0.001).toFixed(1)}s!`, "#ffd866");
       }
     };
 
