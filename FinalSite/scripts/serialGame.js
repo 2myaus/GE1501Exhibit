@@ -83,8 +83,13 @@ const startSerial = async () => {
         alert("No hull detected!");
       }
 
-      if(game){ game.stop(); }
-      startGame(hullName, frontName, backName);
+      if (game) {
+        if (game.over) {
+          game.stop();
+          startGame(hullName, frontName, backName);
+        }
+        else buttonPressed = true;
+      }
 
       console.log(hullName, frontName, backName);
     }
@@ -93,15 +98,19 @@ const startSerial = async () => {
 
 startButton.addEventListener("click", startSerial);
 
+
 window.addEventListener("load", () => {
-  document.body.appendChild(startButton);
-  if(navigator.serial){
+  document.body.addEventListener("click", () => {
+    buttonPressed = true;
+  });
+  if (navigator.serial) {
+    document.body.appendChild(startButton);
     navigator.serial.getPorts().then(async (ports) => {
-      if(ports.length == 0) return;
-      await startSerial();  
+      if (ports.length == 0) return;
+      await startSerial();
     });
   }
-  else{
+  else {
     // startGame("pirate", "rectangleSail", "flettner");
     startGame(prompt("hull?"), prompt("att1?"), prompt("att2?"));
   }

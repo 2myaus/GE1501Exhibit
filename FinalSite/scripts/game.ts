@@ -344,6 +344,12 @@ class Ship extends GameObject {
         if (targetDist < this.homeStopDistance) {
           this.state = ShipState.unloadingCargo;
         }
+        if (buttonPressed) {
+          alert("presed");
+        }
+
+        currentRoom.outlineCircle(this.home!.worldPosition, this.homeStopDistance, "#0af", 0.5);
+
         break;
       }
       case ShipState.loadingCargo: {
@@ -436,6 +442,7 @@ class Ship extends GameObject {
       this.attachment2.update(deltaMillis, currentRoom);
     }
     super.update(deltaMillis, currentRoom);
+    buttonPressed = false;
   }
 
   animate(deltaMillis: number, currentRoom: Room) {
@@ -482,6 +489,10 @@ class GameBg extends GameObject {
     currentRoom._fillRect(new Vec2(-1000, 1), new Vec2(1000, 500), "#76b0f8"); //This is necessary to get it to be in the background :(
   }
 }
+
+let mainShip: Ship | undefined;
+
+let buttonPressed = false;
 
 const startGame = (hull: string, a1: string, a2: string) => {
   const canvas: HTMLCanvasElement | null =
@@ -565,6 +576,7 @@ const startGame = (hull: string, a1: string, a2: string) => {
     ship.home = home;
     ship.target = target;
 
+    mainShip = ship;
 
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
@@ -585,15 +597,13 @@ const startGame = (hull: string, a1: string, a2: string) => {
     const endViewportWidth = 150;
     const endCameraPos = Vec2.zero;
 
-    let gameOver = false;
-
     textObj.update = (deltaMillis: number, _) => {
-      if(gameOver) return;
+      if (game.over) return;
       eUpdateMillis += deltaMillis;
     }
 
     textObj.animate = (deltaMillis: number, currentRoom: Room) => {
-      if (!gameOver) {
+      if (!game.over) {
         currentRoom.drawText(textObj.worldPosition.add(new Vec2(0, -14)), 3, "Retrieve the gold,", "#ffd866");
         currentRoom.drawText(textObj.worldPosition.add(new Vec2(0, -10)), 3, "Build your island!", "#ffd866");
 
@@ -616,7 +626,7 @@ const startGame = (hull: string, a1: string, a2: string) => {
           game.room.cameraWorldPos = startCameraPos.add(endCameraPos.minus(startCameraPos).times(animationCurrentTime / animationDuration));
         }
 
-        gameOver = home.heldCargo >= home.maxCargo;
+        game.over = home.heldCargo >= home.maxCargo;
       }
       else {
         currentRoom.drawText(new Vec2(0, -14), 5, "You win!", "#ffd866");

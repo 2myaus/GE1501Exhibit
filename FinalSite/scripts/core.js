@@ -127,6 +127,18 @@ class Room {
                 this.cameraWorldPos.y) *
                 pixelsPerMeter, sprite.size.x * pixelsPerMeter, sprite.size.y * pixelsPerMeter);
     }
+    outlineCircle(worldCenter, radius, color, width) {
+        this._drawCallCache.push({ func: this._outlineCircle, args: [worldCenter, radius, color, width] });
+    }
+    _outlineCircle(worldCenter, radius, color, width) {
+        const pixelsPerMeter = this.canvas.width / this.viewportWidth;
+        const centerPos = this._worldToScreenPos(worldCenter);
+        this._ctx.strokeStyle = color;
+        this._ctx.lineWidth = width * pixelsPerMeter;
+        this._ctx.beginPath();
+        this._ctx.arc(centerPos.x, centerPos.y, radius * pixelsPerMeter, 0, Math.PI * 2);
+        this._ctx.stroke();
+    }
     fillRect(worldFrom, worldTo, color) {
         this._drawCallCache.push({ func: this._fillRect, args: [worldFrom, worldTo, color] });
     }
@@ -208,6 +220,7 @@ class Game {
         cancelAnimationFrame(this._lastFrameReq);
     }
     constructor(canvas) {
+        this.over = false;
         this.room = new Room(canvas);
         this.loadedBitmaps = {};
         this._lastFrameReq = null;

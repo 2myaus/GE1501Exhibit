@@ -259,6 +259,10 @@ class Ship extends GameObject {
                 if (targetDist < this.homeStopDistance) {
                     this.state = ShipState.unloadingCargo;
                 }
+                if (buttonPressed) {
+                    alert("presed");
+                }
+                currentRoom.outlineCircle(this.home.worldPosition, this.homeStopDistance, "#0af", 0.5);
                 break;
             }
             case ShipState.loadingCargo: {
@@ -347,6 +351,7 @@ class Ship extends GameObject {
             this.attachment2.update(deltaMillis, currentRoom);
         }
         super.update(deltaMillis, currentRoom);
+        buttonPressed = false;
     }
     animate(deltaMillis, currentRoom) {
         if (this.attachment1) {
@@ -384,6 +389,8 @@ class GameBg extends GameObject {
         currentRoom._fillRect(new Vec2(-1000, 1), new Vec2(1000, 500), "#76b0f8"); //This is necessary to get it to be in the background :(
     }
 }
+let mainShip;
+let buttonPressed = false;
 const startGame = (hull, a1, a2) => {
     const canvas = document.querySelector("#canvas");
     if (!canvas) {
@@ -433,6 +440,7 @@ const startGame = (hull, a1, a2) => {
         ship.state = ShipState.goingToTarget;
         ship.home = home;
         ship.target = target;
+        mainShip = ship;
         canvas.width = canvas.offsetWidth;
         canvas.height = canvas.offsetHeight;
         game.room.cameraWorldPos = home.worldPosition.add(new Vec2(0, -2.5));
@@ -446,14 +454,13 @@ const startGame = (hull, a1, a2) => {
         const endTime = 3000;
         const endViewportWidth = 150;
         const endCameraPos = Vec2.zero;
-        let gameOver = false;
         textObj.update = (deltaMillis, _) => {
-            if (gameOver)
+            if (game.over)
                 return;
             eUpdateMillis += deltaMillis;
         };
         textObj.animate = (deltaMillis, currentRoom) => {
-            if (!gameOver) {
+            if (!game.over) {
                 currentRoom.drawText(textObj.worldPosition.add(new Vec2(0, -14)), 3, "Retrieve the gold,", "#ffd866");
                 currentRoom.drawText(textObj.worldPosition.add(new Vec2(0, -10)), 3, "Build your island!", "#ffd866");
                 eMillis += deltaMillis;
@@ -473,7 +480,7 @@ const startGame = (hull, a1, a2) => {
                     game.room.viewportWidth = startViewportWidth + (endViewportWidth - startViewportWidth) * (animationCurrentTime / animationDuration);
                     game.room.cameraWorldPos = startCameraPos.add(endCameraPos.minus(startCameraPos).times(animationCurrentTime / animationDuration));
                 }
-                gameOver = home.heldCargo >= home.maxCargo;
+                game.over = home.heldCargo >= home.maxCargo;
             }
             else {
                 currentRoom.drawText(new Vec2(0, -14), 5, "You win!", "#ffd866");
