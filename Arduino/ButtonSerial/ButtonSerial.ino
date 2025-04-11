@@ -1,4 +1,4 @@
-const uint8_t PIN_BUTTON_IN = 3;
+const uint8_t PIN_BUTTON_IN = 13;
 const uint8_t PIN_WHITE = A0;
 const uint8_t PIN_BLUE = A1;
 const uint8_t PIN_GREEN = A2;

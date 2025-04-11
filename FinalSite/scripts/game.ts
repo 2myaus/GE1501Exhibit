@@ -369,13 +369,14 @@ class Ship extends GameObject {
           const offDist = Math.abs(Vec2.distance(this.worldPosition, toPosition) - this.homeStopDistance * 1.5);
           const cargoBonus = Math.min(Math.max(5 - offDist, 0), 5) * 30;
 
-
           const oldTargetCargo = this.target!.heldCargo;
           this.target!.heldCargo -= cargoBonus;
           if (this.target!.heldCargo < 0) { this.target!.heldCargo = 0; }
           const realCargoBonus = oldTargetCargo - this.target!.heldCargo;
           this.carryingCargo += realCargoBonus;
           this.lastBonus = realCargoBonus;
+
+          buttonPresses += 1;
         }
 
         if (this.lastBonus == 0 && !game.over && this.target!.heldCargo > 0) {
@@ -529,6 +530,9 @@ class GameBg extends GameObject {
 let mainShip: Ship | undefined;
 
 let buttonPressed = false;
+let buttonPresses = 0;
+
+let bestTime = 39500;
 
 const startGame = (hull: string, a1: string, a2: string) => {
   const canvas: HTMLCanvasElement | null =
@@ -539,6 +543,7 @@ const startGame = (hull: string, a1: string, a2: string) => {
   }
 
   game = new Game(canvas);
+  buttonPresses = 0;
 
   window.addEventListener("resize", () => {
     canvas.width = canvas.offsetWidth;
@@ -651,6 +656,37 @@ const startGame = (hull: string, a1: string, a2: string) => {
       eUpdateMillis += deltaMillis;
     }
 
+
+    async function sendLog(elapsedMillis: number, buttonPresses: number) {
+      const data = {
+        elapsedMillis,
+        buttonPresses
+      };
+
+      try {
+        const response = await fetch('http://localhost:8080', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+
+        const text = await response.text();
+        console.log("Server response:", text);
+      } catch (error) {
+        console.error("Error sending data:", error);
+      }
+    }
+
+    let gameWasOver = false;
+    const gameOverFunc = () => {
+      if (!sendLog) return;
+      try {
+        sendLog(Math.floor(eUpdateMillis), buttonPresses);
+      } catch (e) { }
+    };
+
     textObj.animate = (deltaMillis: number, currentRoom: Room) => {
       if (!game.over) {
         currentRoom.drawText(textObj.worldPosition.add(new Vec2(0, -14)), 3, "Retrieve the gold,", "#ffd866");
@@ -682,8 +718,30 @@ const startGame = (hull: string, a1: string, a2: string) => {
         game.over = home.heldCargo >= home.maxCargo;
       }
       else {
-        currentRoom.drawText(new Vec2(0, -14), 5, "You win!", "#ffd866");
-        currentRoom.drawText(new Vec2(0, -9), 5, `Time: ${(eUpdateMillis * 0.001).toFixed(1)}s!`, "#ffd866");
+        let wintext = "You win!";
+        if(eUpdateMillis < bestTime){
+          bestTime = eUpdateMillis;
+          wintext = "!! New best time !!";
+        }
+        else if(eUpdateMillis - 1000 < bestTime){
+          wintext = "Amazing!";
+        }
+        else if(eUpdateMillis - 5000 < bestTime){
+          wintext = "Great!";
+        }
+        else if(eUpdateMillis - 10000 < bestTime){
+          wintext = "OK..";
+        }
+        else{
+          wintext = "Sluggish..";
+        }
+        currentRoom.drawText(new Vec2(0, -20), 5, wintext, "#ffd866");
+        currentRoom.drawText(new Vec2(0, -15), 5, `Time: ${(eUpdateMillis * 0.001).toFixed(1)}s`, "#ffd866");
+        currentRoom.drawText(new Vec2(0, -10), 5, `Best time: ${(bestTime * 0.001).toFixed(1)}s`, "#ffd866");
+        if (!gameWasOver) {
+          gameOverFunc();
+        }
+        gameWasOver = true;
       }
     };
 

@@ -80,7 +80,8 @@ const startSerial = async () => {
       backName = getAttachment(backNum);
 
       if (hullName == "") {
-        alert("No hull detected!");
+        //alert("No hull detected!");
+        return;
       }
 
       if (game) {
