@@ -33,15 +33,25 @@ class ShipAttachment extends GameObject {
         };
         spriteSize = new Vec2(5, 5);
         break;
-      case "cargo":
+      case "cargo1":
         maybeAttachmentConfig = {
-          partName: "cargo",
+          partName: "cargo1",
           windSpeedBoost: 0,
           baseWaterSpeed: 0,
           waterDrag: 10,
           cargoCapacity: 150
         };
         spriteSize = new Vec2(2, 2);
+        break;
+      case "cargo2":
+        maybeAttachmentConfig = {
+          partName: "cargo2",
+          windSpeedBoost: 0,
+          baseWaterSpeed: 0,
+          waterDrag: 18,
+          cargoCapacity: 250
+        };
+        spriteSize = new Vec2(4, 4);
         break;
       case "flettner":
         maybeAttachmentConfig = {
@@ -140,7 +150,7 @@ class CargoTarget extends GameObject {
     const sprite = new Sprite(bitmap, spriteSize);
     super(sprite, worldPos, Vec2.zero);
     this.heldCargo = 0;
-    this.maxCargo = 1000;
+    this.maxCargo = 1800;
     this.zIndex = -50;
     this.targetType = targetType;
   }
@@ -162,16 +172,19 @@ class CargoTarget extends GameObject {
 
     let buildingSprite: Sprite | null = null;
     let buildingStage = Math.min(Math.max(Math.floor(3 * this.heldCargo / this.maxCargo) + 1, 1), 3);
+    let off = Vec2.zero;
 
     if (this.targetType == "home") {
       buildingSprite = new Sprite(game.loadedBitmaps[`homeIslandBuilding${buildingStage}`], new Vec2(15, 15));
+      off = new Vec2(-1, 1);
     }
     else {
-      buildingSprite = null;
+      buildingSprite = new Sprite(game.loadedBitmaps[`targetIslandBuilding${buildingStage}`], new Vec2(10, 10));
+      off = new Vec2(-4, 0);
     }
 
     if (buildingSprite) {
-      currentRoom.drawSprite(this.worldPosition.add(new Vec2(-1, 1)), buildingSprite);
+      currentRoom.drawSprite(this.worldPosition.add(off), buildingSprite);
     }
 
 
@@ -553,6 +566,11 @@ const startGame = (hull: string, a1: string, a2: string) => {
         await game.preloadBitmap(`homeIslandBuilding${i}`, `Assets/HomeBuildings/${i}.png`);
       }
     })(),
+    (async () => {
+      for (let i = 1; i <= 3; i++) {
+        await game.preloadBitmap(`targetIslandBuilding${i}`, `Assets/CoinPiles/${i}.png`);
+      }
+    })(),
 
     game.preloadBitmap(
       "rectangleSailAttachmentRight",
@@ -563,12 +581,20 @@ const startGame = (hull: string, a1: string, a2: string) => {
       "Assets/RectangleSail/Left.png",
     ),
     game.preloadBitmap(
-      "cargoAttachmentLeft",
+      "cargo1AttachmentLeft",
       "Assets/CargoCrate.png"
     ),
     game.preloadBitmap(
-      "cargoAttachmentRight",
+      "cargo1AttachmentRight",
       "Assets/CargoCrate.png"
+    ),
+    game.preloadBitmap(
+      "cargo2AttachmentLeft",
+      "Assets/DoubleCargoCrate.png"
+    ),
+    game.preloadBitmap(
+      "cargo2AttachmentRight",
+      "Assets/DoubleCargoCrate.png"
     ),
     game.preloadBitmap(
       "flettnerAttachmentRight",
@@ -594,7 +620,7 @@ const startGame = (hull: string, a1: string, a2: string) => {
     const ship = new Ship(hull, a1, a2, new Vec2(-30, 0));
     const home = new CargoTarget("home", new Vec2(-50, -2));
     const target = new CargoTarget("island", new Vec2(50, -4));
-    target.heldCargo = 1000;
+    target.heldCargo = target.maxCargo;
     ship.state = ShipState.goingToTarget;
     ship.home = home;
     ship.target = target;
@@ -637,9 +663,9 @@ const startGame = (hull: string, a1: string, a2: string) => {
           game.room.cameraWorldPos = startCameraPos;
           game.room.timeScale = 0.001;
 
-          currentRoom.drawText(mainShip!.worldPosition.add(new Vec2(0, -10)), 2, `Speed: ${mainShip?.statSum.baseWaterSpeed}`, "#a0a8a6");
-          currentRoom.drawText(mainShip!.worldPosition.add(new Vec2(0, -8)), 2, `Wind power: ${mainShip?.statSum.windSpeedBoost}`, "#a0a8a6");
-          currentRoom.drawText(mainShip!.worldPosition.add(new Vec2(0, -6)), 2, `Cargo capacity: ${mainShip?.statSum.cargoCapacity}`, "#a0a8a6");
+          currentRoom.drawText(mainShip!.worldPosition.add(new Vec2(-2, -10)), 2, `Speed: ${mainShip?.statSum.baseWaterSpeed}`, "#a0a8a6");
+          currentRoom.drawText(mainShip!.worldPosition.add(new Vec2(-2, -8)), 2, `Wind power: ${mainShip?.statSum.windSpeedBoost}`, "#a0a8a6");
+          currentRoom.drawText(mainShip!.worldPosition.add(new Vec2(-2, -6)), 2, `Cargo capacity: ${mainShip?.statSum.cargoCapacity}`, "#a0a8a6");
         }
         else if (eMillis > endTime) {
           game.room.viewportWidth = endViewportWidth;
