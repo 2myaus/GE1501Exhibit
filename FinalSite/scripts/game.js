@@ -247,8 +247,8 @@ class Ship extends GameObject {
         this.statSum = statSum;
     }
     update(deltaMillis, currentRoom) {
-        const windSpeed = 10; // m/s
-        const cargoLoadSpeed = 60; // Units per second
+        const windSpeed = 12; // m/s
+        const cargoLoadSpeed = 120; // Units per second
         const deltaSeconds = deltaMillis * 0.001;
         if (!this.target || !this.home)
             this.state = ShipState.idle;
@@ -287,7 +287,7 @@ class Ship extends GameObject {
                     this.carryingCargo += realCargoBonus;
                     this.lastBonus = realCargoBonus;
                 }
-                if (this.lastBonus == 0 && !game.over) {
+                if (this.lastBonus == 0 && !game.over && this.target.heldCargo > 0) {
                     currentRoom.outlineCircle(this.home.worldPosition, this.homeStopDistance * 1.5, "#0fa", 2);
                     currentRoom.outlineCircle(this.home.worldPosition, Vec2.distance(this.worldPosition, toPosition), "#0af", 0.3);
                 }
