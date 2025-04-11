@@ -70,8 +70,8 @@ const startSerial = async () => {
 
       const getAttachment = (num) => {
         if (num < 45) return "rectangleSail";
-        else if (num < 60) return "cargo1";
-        else if (num < 130) return "cargo2";
+        else if (num < 60) return "cargo2";
+        else if (num < 130) return "cargo1";
         else if (num < 580) return "flettner";
         else return "";
       };
