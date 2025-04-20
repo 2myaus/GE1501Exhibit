@@ -56,7 +56,7 @@ class ShipAttachment extends GameObject {
       case "flettner":
         maybeAttachmentConfig = {
           partName: "flettner",
-          windSpeedBoost: 70,
+          windSpeedBoost: 80,
           baseWaterSpeed: 0,
           waterDrag: 0,
           cargoCapacity: 50
@@ -533,6 +533,7 @@ let buttonPressed = false;
 let buttonPresses = 0;
 
 let bestTime = 39500;
+let cheatFunc = (arg0: number) => {};
 
 const startGame = (hull: string, a1: string, a2: string) => {
   const canvas: HTMLCanvasElement | null =
@@ -656,6 +657,10 @@ const startGame = (hull: string, a1: string, a2: string) => {
       eUpdateMillis += deltaMillis;
     }
 
+    cheatFunc = (arg0: number) => {
+      eUpdateMillis = arg0;
+    };
+
 
     async function sendLog(elapsedMillis: number, buttonPresses: number) {
       const data = {
@@ -719,7 +724,7 @@ const startGame = (hull: string, a1: string, a2: string) => {
       }
       else {
         let wintext = "You win!";
-        if(eUpdateMillis < bestTime){
+        if(eUpdateMillis <= bestTime){
           bestTime = eUpdateMillis;
           wintext = "!! New best time !!";
         }
@@ -730,10 +735,10 @@ const startGame = (hull: string, a1: string, a2: string) => {
           wintext = "Great!";
         }
         else if(eUpdateMillis - 10000 < bestTime){
-          wintext = "OK..";
+          wintext = "Fine!";
         }
         else{
-          wintext = "Sluggish..";
+          wintext = "Cool!";
         }
         currentRoom.drawText(new Vec2(0, -20), 5, wintext, "#ffd866");
         currentRoom.drawText(new Vec2(0, -15), 5, `Time: ${(eUpdateMillis * 0.001).toFixed(1)}s`, "#ffd866");

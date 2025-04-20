@@ -79,11 +79,6 @@ const startSerial = async () => {
       frontName = getAttachment(frontNum);
       backName = getAttachment(backNum);
 
-      if (hullName == "") {
-        //alert("No hull detected!");
-        return;
-      }
-
       if (game) {
         if (game.over) {
           game.stop();
@@ -92,6 +87,10 @@ const startSerial = async () => {
         else buttonPressed = true;
       }
       else {
+        if (hullName == "") {
+          //alert("No hull detected!");
+          continue;
+        }
         startGame(hullName, frontName, backName);
       }
 

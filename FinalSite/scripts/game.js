@@ -52,7 +52,7 @@ class ShipAttachment extends GameObject {
             case "flettner":
                 maybeAttachmentConfig = {
                     partName: "flettner",
-                    windSpeedBoost: 70,
+                    windSpeedBoost: 80,
                     baseWaterSpeed: 0,
                     waterDrag: 0,
                     cargoCapacity: 50
@@ -425,6 +425,7 @@ let mainShip;
 let buttonPressed = false;
 let buttonPresses = 0;
 let bestTime = 39500;
+let cheatFunc = (arg0) => { };
 const startGame = (hull, a1, a2) => {
     const canvas = document.querySelector("#canvas");
     if (!canvas) {
@@ -501,6 +502,9 @@ const startGame = (hull, a1, a2) => {
                 return;
             eUpdateMillis += deltaMillis;
         };
+        cheatFunc = (arg0) => {
+            eUpdateMillis = arg0;
+        };
         function sendLog(elapsedMillis, buttonPresses) {
             return __awaiter(this, void 0, void 0, function* () {
                 const data = {
@@ -560,9 +564,9 @@ const startGame = (hull, a1, a2) => {
             }
             else {
                 let wintext = "You win!";
-                if (eUpdateMillis < bestTime) {
+                if (eUpdateMillis <= bestTime) {
                     bestTime = eUpdateMillis;
-                    wintext = "!! New high score !!";
+                    wintext = "!! New best time !!";
                 }
                 else if (eUpdateMillis - 1000 < bestTime) {
                     wintext = "Amazing!";
@@ -571,14 +575,14 @@ const startGame = (hull, a1, a2) => {
                     wintext = "Great!";
                 }
                 else if (eUpdateMillis - 10000 < bestTime) {
-                    wintext = "OK..";
+                    wintext = "Fine!";
                 }
                 else {
-                    wintext = "Sluggish..";
+                    wintext = "Cool!";
                 }
                 currentRoom.drawText(new Vec2(0, -20), 5, wintext, "#ffd866");
-                currentRoom.drawText(new Vec2(0, -15), 5, `Time: ${(eUpdateMillis * 0.001).toFixed(1)}s!`, "#ffd866");
-                currentRoom.drawText(new Vec2(0, -10), 5, `Best score: ${(bestTime * 0.001).toFixed(1)}s!`, "#ffd866");
+                currentRoom.drawText(new Vec2(0, -15), 5, `Time: ${(eUpdateMillis * 0.001).toFixed(1)}s`, "#ffd866");
+                currentRoom.drawText(new Vec2(0, -10), 5, `Best time: ${(bestTime * 0.001).toFixed(1)}s`, "#ffd866");
                 if (!gameWasOver) {
                     gameOverFunc();
                 }
